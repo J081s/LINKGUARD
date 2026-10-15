@@ -37,32 +37,65 @@ app.use((error, _req, res, next) => {
 
 const scanLimiter = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: "draft-7", legacyHeaders: false, message: { error: "Too many scan requests. Please try again later." } });
 
-app.get("/api/health", (_req, res) => res.json({ success: true, application: "LinkGuard", backend: "Online", providers: getConnectionStatus() }));
-
-app.post("/api/scan", scanLimiter, async (req, res) => {
-  let raw = req.body?.url;
-  if (typeof raw !== "string" || !raw.trim() || raw.length > 2048) return res.status(400).json({ error: "Please provide a valid URL under 2048 characters." });
-  raw = raw.trim();
+export async function performUrlScan(rawInput, env = process.env) {
+  if (typeof rawInput !== "string" || !rawInput.trim() || rawInput.length > 2048) {
+    const err = new Error("Please provide a valid URL under 2048 characters.");
+    err.status = 400;
+    throw err;
+  }
+  let raw = rawInput.trim();
   if (!/^https?:\/\//i.test(raw)) {
     raw = "https://" + raw;
   }
   let url;
-  try { url = new URL(raw); } catch { return res.status(400).json({ error: "Invalid URL format." }); }
-  if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || url.username || url.password) return res.status(400).json({ error: "Only valid HTTP/HTTPS URLs without embedded credentials are supported." });
   try {
-    const local = analyseURLLocally(url);
-    const threatIntelligence = await collectThreatIntelligence(url);
-    const assessment = assessRisk(local, threatIntelligence);
-    res.json({ success: true, scannedURL: url.href, ...assessment, localRiskScore: local.score, threatIntelligence,
-      message: assessment.status === "API NOT CONFIGURED" ? "API NOT CONFIGURED: configure at least one provider in .env, then restart the backend."
-        : assessment.status === "Checks Incomplete" ? "Threat-intelligence checks are incomplete; no safety conclusion is available."
-        : assessment.status === "No Known Threat Found" ? "No known threat was found by all configured completed checks. This is not a guarantee of safety."
-        : assessment.status === "Known Malicious" ? (assessment.findings.some(f => f.source === "Google Safe Browsing" || f.source === "VirusTotal" || f.source === "URLhaus") ? "Threat intelligence identified this URL as malicious." : "High-risk threat indicators and security heuristics identified this URL as malicious.")
-        : "Suspicious indicators were identified; further investigation is recommended." });
+    url = new URL(raw);
+  } catch {
+    const err = new Error("Invalid URL format.");
+    err.status = 400;
+    throw err;
+  }
+  if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || url.username || url.password) {
+    const err = new Error("Only valid HTTP/HTTPS URLs without embedded credentials are supported.");
+    err.status = 400;
+    throw err;
+  }
+
+  const local = analyseURLLocally(url);
+  const threatIntelligence = await collectThreatIntelligence(url, env);
+  const assessment = assessRisk(local, threatIntelligence);
+
+  return {
+    success: true,
+    scannedURL: url.href,
+    ...assessment,
+    localRiskScore: local.score,
+    threatIntelligence,
+    message: assessment.status === "API NOT CONFIGURED" ? "API NOT CONFIGURED: configure at least one provider in .env, then restart the backend."
+      : assessment.status === "Checks Incomplete" ? "Threat-intelligence checks are incomplete; no safety conclusion is available."
+      : assessment.status === "No Known Threat Found" ? "No known threat was found by all configured completed checks. This is not a guarantee of safety."
+      : assessment.status === "Known Malicious" ? (assessment.findings.some(f => f.source === "Google Safe Browsing" || f.source === "VirusTotal" || f.source === "URLhaus") ? "Threat intelligence identified this URL as malicious." : "High-risk threat indicators and security heuristics identified this URL as malicious.")
+      : "Suspicious indicators were identified; further investigation is recommended."
+  };
+}
+
+app.get(["/api/health", "/health"], (_req, res) => res.json({ success: true, application: "LinkGuard", backend: "Online", providers: getConnectionStatus() }));
+
+app.post(["/api/scan", "/scan"], scanLimiter, async (req, res) => {
+  try {
+    const result = await performUrlScan(req.body?.url);
+    res.json(result);
   } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
     console.error("LinkGuard scan error:", error.message);
     res.status(500).json({ error: "An internal error occurred while scanning the URL." });
   }
 });
 
-app.listen(port, () => console.log(`LinkGuard backend ready at http://localhost:${port}`));
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  app.listen(port, () => console.log(`LinkGuard backend ready at http://localhost:${port}`));
+}
+
+export { app };
+export default app;

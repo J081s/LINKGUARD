@@ -50,7 +50,11 @@ async function scanLinkWithThreatIntelligence(rawURL) {
         console.error("LinkGuard frontend error:", error);
 
         if (error.name === "TypeError" || error.message === "Failed to fetch" || error.message.includes("fetch") || error.message.includes("NetworkError")) {
-            throw new Error("Unable to connect to the LinkGuard backend. Please ensure the server is running ('npm start') and accessible at http://localhost:3000.");
+            const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+            throw new Error(isLocal
+                ? "Unable to connect to the LinkGuard backend. Please ensure the server is running ('npm start') and accessible at http://localhost:3000."
+                : "Unable to connect to the LinkGuard backend. Please check deployment status."
+            );
         }
         throw error;
 
@@ -87,7 +91,10 @@ async function loadConnectionStatus() {
         const { providers } = await response.json();
         target.innerHTML = Object.values(providers).map(p => `<span class="connection ${p.configured ? "ready" : "missing"}"><i></i>${escapeHTML(p.provider)}: ${p.configured ? "CONFIGURED" : "NOT CONFIGURED"}</span>`).join("");
     } catch {
-        target.textContent = "Backend offline — run 'npm start' in terminal";
+        const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+        target.textContent = isLocal
+            ? "Backend offline — run 'npm start' in terminal"
+            : "Backend offline — check deployment status";
         target.classList.add("backend-offline");
     }
 }
