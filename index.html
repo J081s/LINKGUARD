@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cybersecurity tool for analysing suspicious URLs.">
+    <title>LinkGuard | Malicious Link Detector</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+            <span class="logo-icon">🛡</span>
+            <span>Link<span class="highlight">Guard</span></span>
+        </div>
+
+        <nav>
+            <a href="#scanner">Scanner</a>
+            <a href="#history">Scan History</a>
+            <a href="#about">About</a>
+        </nav>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            Scanner Ready
+        </div>
+    </header>
+
+    <main>
+
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="security-label">
+                <span>●</span> CYBERSECURITY PROTECTION
+            </div>
+
+            <h1>
+                Detect Malicious Links.<br>
+                <span class="highlight">Stay Protected.</span>
+            </h1>
+
+            <p>
+                Analyse suspicious URLs and identify potential phishing,
+                scam websites, and dangerous links before visiting them.
+            </p>
+        </section>
+
+        <!-- Scanner Section -->
+        <section class="scanner-card" id="scanner">
+
+            <div class="scanner-heading">
+                <div>
+                    <h2>URL Security Scanner</h2>
+                    <p>Enter a URL below to analyse its security.</p>
+                    <div id="apiConnectionStatus" class="api-connection-status" aria-live="polite">Checking API connections…</div>
+                </div>
+
+                <span class="scanner-icon">⌕</span>
+            </div>
+
+            <form id="scanForm">
+
+                <label for="urlInput">Website URL</label>
+
+                <div class="input-container">
+                    <span class="link-icon">🔗</span>
+
+                    <input
+                        type="text"
+                        id="urlInput"
+                        placeholder="https://example.com"
+                        autocomplete="url"
+                        required
+                    >
+
+                    <button type="submit" id="scanButton">
+                        Scan URL →
+                    </button>
+                </div>
+
+            <small>Local heuristics always run. External provider results are shown only when their checks complete.</small>
+
+            </form>
+
+            <!-- Loading -->
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Analysing URL security...</p>
+            </div>
+
+            <!-- Results -->
+            <section id="resultSection" class="result-section hidden">
+
+                <div class="result-header">
+                    <h3>Scan Results</h3>
+                    <span id="resultBadge" class="badge"></span>
+                </div>
+
+                <div class="report-notice" id="reportNotice"></div>
+
+                <section class="provider-report" aria-label="Threat intelligence provider report">
+                    <div class="provider-report-heading">
+                        <h3>Threat Intelligence Report</h3>
+                        <span>Live provider status</span>
+                    </div>
+                    <div id="providerStatus" class="provider-status"></div>
+                </section>
+
+                <div class="result-grid">
+
+                    <div class="risk-card">
+                        <p>Risk Score <span class="score-note">(combined assessment)</span></p>
+
+                        <div class="score">
+                            <span id="riskScore">0</span>
+                            <small>/100</small>
+                        </div>
+
+                        <div class="progress-track">
+                            <div id="riskBar" class="progress-bar"></div>
+                        </div>
+
+                        <p id="riskDescription">Analysis completed</p>
+                    </div>
+
+                    <div class="details-card">
+                        <p>Analysed URL</p>
+                        <div id="analysedUrl" class="analysed-url"></div>
+
+                        <p>Domain</p>
+                        <strong id="domainName"></strong>
+
+                        <p>Protocol</p>
+                        <strong id="protocolName"></strong>
+                    </div>
+
+                </div>
+
+                <div class="findings">
+                    <h3>Security Findings</h3>
+                    <ul id="findingsList"></ul>
+                </div>
+
+                <div id="recommendation" class="recommendation"></div>
+
+            </section>
+
+            <div id="errorMessage" class="error hidden"></div>
+
+        </section>
+
+        <!-- Scan History -->
+        <section class="history-section" id="history">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Recent Scans</h2>
+                    <p>Your previous URL analysis results.</p>
+                </div>
+
+                <button id="clearHistory" class="clear-button">
+                    Clear History
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Website</th>
+                            <th>Risk Score</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="historyBody">
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No scans performed yet.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- About -->
+        <section class="about-section" id="about">
+            <h2>How LinkGuard Works</h2>
+
+            <div class="about-grid">
+
+                <div class="about-card">
+                    <span>🔍</span>
+                    <h3>URL Analysis</h3>
+                    <p>Examines website addresses for suspicious patterns.</p>
+                </div>
+
+                <div class="about-card">
+                    <span>⚠️</span>
+                    <h3>Threat Detection</h3>
+                    <p>Identifies indicators associated with phishing and scams.</p>
+                </div>
+
+                <div class="about-card">
+                    <span>🛡️</span>
+                    <h3>Security Awareness</h3>
+                    <p>Provides findings to help users make safer decisions.</p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>© 2026 LinkGuard. Cybersecurity Awareness & Protection.</p>
+        <p>Built for educational and defensive security purposes.</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+
+</body>
+</html>
